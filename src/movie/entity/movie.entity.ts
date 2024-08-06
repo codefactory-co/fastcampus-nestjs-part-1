@@ -34,6 +34,7 @@ export class Movie extends BaseTable{
             nullable: false,
         }
     )
+    @JoinColumn()
     detail: MovieDetail;
 
     @ManyToOne(
