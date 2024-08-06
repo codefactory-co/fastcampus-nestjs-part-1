@@ -26,12 +26,16 @@ export class Movie extends BaseTable{
             cascade: true,
         }
     )
+    
     @JoinColumn()
     detail: MovieDetail;
 
     @ManyToOne(
         ()=> Director,
         director => director.id,
+        {
+            cascade: true,
+        }
     )
     director: Director;
 }
