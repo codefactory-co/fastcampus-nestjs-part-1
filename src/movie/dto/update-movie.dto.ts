@@ -1,4 +1,4 @@
-import { Contains, Equals, IsAlphanumeric, IsArray, IsBoolean, IsCreditCard, IsDate, IsDateString, IsDefined, IsDivisibleBy, IsEmpty, IsEnum, IsHexColor, IsIn, IsInt, IsLatLong, IsNegative, IsNotEmpty, IsNotIn, IsNumber, IsOptional, IsPositive, IsString, IsUUID, Max, MaxLength, Min, MinLength, NotContains, NotEquals, registerDecorator, Validate, ValidationArguments, ValidationOptions, ValidatorConstraint, ValidatorConstraintInterface } from "class-validator";
+import { ArrayNotEmpty, Contains, Equals, IsAlphanumeric, IsArray, IsBoolean, IsCreditCard, IsDate, IsDateString, IsDefined, IsDivisibleBy, IsEmpty, IsEnum, IsHexColor, IsIn, IsInt, IsLatLong, IsNegative, IsNotEmpty, IsNotIn, IsNumber, IsOptional, IsPositive, IsString, IsUUID, Max, MaxLength, Min, MinLength, NotContains, NotEquals, registerDecorator, Validate, ValidationArguments, ValidationOptions, ValidatorConstraint, ValidatorConstraintInterface } from "class-validator";
 
 enum MovieGenre{
     Fantasy = 'fantasy',
@@ -11,10 +11,13 @@ export class UpdateMovieDto{
     @IsOptional()
     title?: string;
 
-    @IsNotEmpty()
-    @IsString()
+    @IsArray()
+    @ArrayNotEmpty()
+    @IsNumber({}, {
+        each: true,
+    })
     @IsOptional()
-    genre?: string;
+    genreIds?: number[];
 
     @IsNotEmpty()
     @IsOptional()
