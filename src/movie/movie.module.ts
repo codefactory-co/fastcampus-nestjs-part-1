@@ -13,6 +13,7 @@ import { Genre } from 'src/genre/entities/genre.entity';
       Movie,
       MovieDetail,
       Director,
+      Genre,
     ]),
   ],
   controllers: [MovieController],

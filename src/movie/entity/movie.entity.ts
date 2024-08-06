@@ -1,6 +1,6 @@
 import { BaseExceptionFilter } from "@nestjs/core";
 import { Exclude, Expose, Transform } from "class-transformer";
-import { ChildEntity, Column, CreateDateColumn, Entity, JoinColumn, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn, TableInheritance, UpdateDateColumn, VersionColumn } from "typeorm";
+import { ChildEntity, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn, TableInheritance, UpdateDateColumn, VersionColumn } from "typeorm";
 import { BaseTable } from "../../common/entity/base-table.entity";
 import { MovieDetail } from "./movie-detail.entity";
 import { Director } from "src/director/entity/director.entity";
@@ -23,6 +23,7 @@ export class Movie extends BaseTable{
         ()=> Genre,
         genre => genre.movies,
     )
+    @JoinTable()
     genres: Genre[];
 
     @OneToOne(
@@ -33,7 +34,6 @@ export class Movie extends BaseTable{
             nullable: false,
         }
     )
-    @JoinColumn()
     detail: MovieDetail;
 
     @ManyToOne(
