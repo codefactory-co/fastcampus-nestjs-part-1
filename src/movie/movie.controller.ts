@@ -34,7 +34,7 @@ export class MovieController {
 
   @Patch(':id')
   patchMovie(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: string,
     @Body() body: UpdateMovieDto,
   ){
     return this.movieService.update(
@@ -45,7 +45,7 @@ export class MovieController {
 
   @Delete(':id')
   deleteMovie(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: string,
   ){
     return this.movieService.remove(
       +id,
