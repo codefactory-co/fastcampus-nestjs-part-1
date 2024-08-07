@@ -229,8 +229,6 @@ export class MovieService {
         .set(movieUpdateFields)
         .where('id = :id', { id })
         .execute()
-
-      throw new NotFoundException('에러 일부러 던짐!');
   
       // await this.movieRepository.update(
       //   { id },
