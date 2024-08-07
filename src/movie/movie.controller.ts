@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseIntercepto
 import { MovieService } from './movie.service';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { UpdateMovieDto } from './dto/update-movie.dto';
+import { MovieTitleValidationPipe } from './pipe/movie-title-validation.pipe';
 
 @Controller('movie')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -10,7 +11,7 @@ export class MovieController {
 
   @Get()
   getMovies(
-    @Query('title') title?: string,
+    @Query('title', MovieTitleValidationPipe) title?: string,
   ){
     /// title 쿼리의 타입이 string 타입인지?
     return this.movieService.findAll(title);
