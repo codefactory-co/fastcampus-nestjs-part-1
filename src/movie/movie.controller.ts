@@ -12,6 +12,7 @@ export class MovieController {
   constructor(private readonly movieService: MovieService) {}
 
   @Get()
+  @Public()
   getMovies(
     @Query('title', MovieTitleValidationPipe) title?: string,
   ){
