@@ -3,7 +3,7 @@ import { MovieModule } from './movie/movie.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
-import {  Movie} from './movie/entity/movie.entity';
+import { Movie } from './movie/entity/movie.entity';
 import { MovieDetail } from './movie/entity/movie-detail.entity';
 import { DirectorModule } from './director/director.module';
 import { Director } from './director/entity/director.entity';
@@ -20,6 +20,8 @@ import { RBACGuard } from './auth/guard/rbac.guard';
 import { ResponseTimeInterceptor } from './common/interceptor/response-time.interceptor';
 import { ForbiddenExceptionFilter } from './common/filter/forbidden.filter';
 import { QueryFailedExceptionFilter } from './common/filter/query-failed.filter';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -39,7 +41,7 @@ import { QueryFailedExceptionFilter } from './common/filter/query-failed.filter'
       }),
     }),
     TypeOrmModule.forRootAsync({
-      useFactory:(configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         type: configService.get<string>(envVariableKeys.dbType) as "postgres",
         host: configService.get<string>(envVariableKeys.dbHost),
         port: configService.get<number>(envVariableKeys.dbPort),
@@ -56,6 +58,10 @@ import { QueryFailedExceptionFilter } from './common/filter/query-failed.filter'
         synchronize: true,
       }),
       inject: [ConfigService]
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'public'),
+      serveRoot: '/public/'
     }),
     MovieModule,
     DirectorModule,
@@ -86,7 +92,7 @@ import { QueryFailedExceptionFilter } from './common/filter/query-failed.filter'
     }
   ]
 })
-export class AppModule implements NestModule{
+export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(
       BearerTokenMiddleware,
@@ -97,6 +103,6 @@ export class AppModule implements NestModule{
       path: 'auth/register',
       method: RequestMethod.POST,
     })
-    .forRoutes('*')
+      .forRoutes('*')
   }
 }
