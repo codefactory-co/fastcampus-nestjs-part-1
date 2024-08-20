@@ -113,8 +113,6 @@ export class MovieService {
       .of(movieId)
       .add(genres.map(genre => genre.id));
 
-    throw new InternalServerErrorException('일부러 에러던짐!');
-
     return await qr.manager.findOne(Movie, {
       where: {
         id: movieId,
