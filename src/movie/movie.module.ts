@@ -32,7 +32,7 @@ import {v4} from 'uuid';
 
           let extension = 'mp4';
 
-          if(split.length > 1){
+          if (split.length > 1) {
             extension = split[split.length - 1];
           }
 
