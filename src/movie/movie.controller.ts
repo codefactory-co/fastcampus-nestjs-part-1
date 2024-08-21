@@ -12,6 +12,7 @@ import { CacheInterceptor } from 'src/common/interceptor/cache.interceptor';
 import { TransactionInterceptor } from 'src/common/interceptor/transaction.interceptor';
 import { FileFieldsInterceptor, FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { MovieFilePipe } from './pipe/movie-file.pipe';
+import { UserId } from 'src/user/decorator/user-id.decorator';
 
 @Controller('movie')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -41,9 +42,11 @@ export class MovieController {
   postMovie(
     @Body() body: CreateMovieDto,
     @Request() req,
+    @UserId() userId: number,
   ) {
     return this.movieService.create(
       body,
+      userId,
       req.queryRunner,
     );
   }
