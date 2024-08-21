@@ -1,6 +1,6 @@
 import { BaseExceptionFilter } from "@nestjs/core";
 import { Exclude, Expose, Transform } from "class-transformer";
-import { ChildEntity, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn, TableInheritance, UpdateDateColumn, VersionColumn } from "typeorm";
+import { ChildEntity, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, TableInheritance, UpdateDateColumn, VersionColumn } from "typeorm";
 import { BaseTable } from "../../common/entity/base-table.entity";
 import { MovieDetail } from "./movie-detail.entity";
 import { Director } from "src/director/entity/director.entity";
@@ -12,7 +12,7 @@ import { User } from "src/user/entities/user.entity";
 /// OneToOne MovieDetail -> 영화는 하나의 상세 내용을 갖을 수 있음
 /// ManyToMany Genre -> 영화는 여러개의 장르를 갖을 수 있고 장르는 여러개의 영화에 속할 수 있음.
 @Entity()
-export class Movie extends BaseTable{
+export class Movie extends BaseTable {
     @PrimaryGeneratedColumn()
     id: number;
 
@@ -21,14 +21,14 @@ export class Movie extends BaseTable{
         (user) => user.createdMovies,
     )
     creator: User;
-    
+
     @Column({
         unique: true,
     })
     title: string;
 
     @ManyToMany(
-        ()=> Genre,
+        () => Genre,
         genre => genre.movies,
     )
     @JoinTable()
@@ -40,7 +40,7 @@ export class Movie extends BaseTable{
     likeCount: number;
 
     @OneToOne(
-        ()=> MovieDetail,
+        () => MovieDetail,
         movieDetail => movieDetail.id,
         {
             cascade: true,
@@ -51,11 +51,11 @@ export class Movie extends BaseTable{
     detail: MovieDetail;
 
     @Column()
-    @Transform(({value}) => `http://localhost:3000/${value}`)
+    @Transform(({ value }) => `http://localhost:3000/${value}`)
     movieFilePath: string;
 
     @ManyToOne(
-        ()=> Director,
+        () => Director,
         director => director.id,
         {
             cascade: true,
