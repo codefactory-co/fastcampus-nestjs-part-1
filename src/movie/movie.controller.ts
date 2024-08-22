@@ -25,9 +25,10 @@ export class MovieController {
   @Public()
   getMovies(
     @Query() dto: GetMoviesDto,
+    @UserId() userId?: number,
   ) {
     /// title 쿼리의 타입이 string 타입인지?
-    return this.movieService.findAll(dto);
+    return this.movieService.findAll(dto, userId);
   }
 
   @Get(':id')
