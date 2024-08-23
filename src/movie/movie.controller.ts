@@ -38,8 +38,6 @@ export class MovieController {
   @CacheKey('getMoviesRecent')
   @CacheTTL(1000)
   getMoviesRecent(){
-    console.log('getMoviesRecent() 실행!');
-
     return this.movieService.findRecent();
   }
 
