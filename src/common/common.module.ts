@@ -5,6 +5,7 @@ import { MulterModule } from "@nestjs/platform-express";
 import { diskStorage } from "multer";
 import { join } from 'path';
 import { v4 } from 'uuid';
+import { TasksService } from "./tasks.service";
 
 @Module({
     imports: [
@@ -29,7 +30,7 @@ import { v4 } from 'uuid';
         }),
     ],
     controllers: [CommonController],
-    providers: [CommonService],
+    providers: [CommonService, TasksService],
     exports: [CommonService],
 })
 export class CommonModule { }
