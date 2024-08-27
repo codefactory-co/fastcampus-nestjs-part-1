@@ -17,10 +17,12 @@ import { QueryRunner } from 'src/common/decorator/query-runner.decorator';
 import { QueryRunner as QR } from 'typeorm';
 import { CacheKey, CacheTTL, CacheInterceptor as CI } from '@nestjs/cache-manager';
 import { Throttle } from 'src/common/decorator/throttle.decorator';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Movie } from './entity/movie.entity';
 
 @Controller('movie')
 @ApiBearerAuth()
+@ApiTags('movie')
 @UseInterceptors(ClassSerializerInterceptor)
 export class MovieController {
   constructor(private readonly movieService: MovieService) { }
@@ -30,6 +32,17 @@ export class MovieController {
   @Throttle({
     count: 5,
     unit: 'minute',
+  })
+  @ApiOperation({
+    description: '[Movie]를 Pagination 하는 API'
+  })
+  @ApiResponse({
+    status: 200,
+    description: '성공적으로 API Pagination을 실행 했을때!',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Pagination 데이터를 잘못 입력 했을때',
   })
   getMovies(
     @Query() dto: GetMoviesDto,
@@ -44,7 +57,7 @@ export class MovieController {
   @UseInterceptors(CI)
   @CacheKey('getMoviesRecent')
   @CacheTTL(1000)
-  getMoviesRecent(){
+  getMoviesRecent() {
     return this.movieService.findRecent();
   }
 
@@ -122,7 +135,7 @@ export class MovieController {
   createMovieLike(
     @Param('id', ParseIntPipe) movieId: number,
     @UserId() userId: number,
-  ){
+  ) {
     return this.movieService.toggleMovieLike(movieId, userId, true);
   }
 
@@ -130,7 +143,7 @@ export class MovieController {
   createMovieDislike(
     @Param('id', ParseIntPipe) movieId: number,
     @UserId() userId: number,
-  ){
+  ) {
     return this.movieService.toggleMovieLike(movieId, userId, false);
   }
 }
