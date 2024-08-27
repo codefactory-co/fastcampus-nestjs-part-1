@@ -13,11 +13,17 @@ async function bootstrap() {
     .setTitle('코드팩토리 넷플릭스')
     .setDescription('코드팩토리 NestJS 강의!')
     .setVersion('1.0')
+    .addBasicAuth()
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
 
-  SwaggerModule.setup('doc', app, document)
+  SwaggerModule.setup('doc', app, document, {
+    swaggerOptions:{
+      persistAuthorization: true,
+    }
+  })
 
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER))
   app.useGlobalPipes(new ValidationPipe({
