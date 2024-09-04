@@ -6,6 +6,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 const mockUserRepository = {
   findOne: jest.fn(),
@@ -38,6 +39,10 @@ describe('UserService', () => {
     }).compile();
 
     userService = module.get<UserService>(UserService);
+  });
+
+  afterEach(()=>{
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -135,6 +140,66 @@ describe('UserService', () => {
         }
       })
     });
+  });
+
+  describe("update", ()=> {
+    it('should update a user if it exists and return the updated user', async ()=>{
+      const updateUserDto: UpdateUserDto = {
+        email: 'test@codefactory.ai',
+        password: '123123',
+      };
+      const hashRounds = 10;
+      const hashedPassword = 'hashashndvizxcjnvkolisadf';
+      const user = {
+        id: 1,
+        email: updateUserDto.email,
+      };
+
+      jest.spyOn(mockUserRepository, 'findOne').mockResolvedValueOnce(user);
+      jest.spyOn(mockConfigService, 'get').mockReturnValue(hashRounds);
+      jest.spyOn(bcrypt, 'hash').mockImplementation((pass, hashRounds) => hashedPassword);
+      jest.spyOn(mockUserRepository, 'update').mockResolvedValue(undefined);
+      jest.spyOn(mockUserRepository, 'findOne').mockResolvedValueOnce({
+        ...user,
+        password: hashedPassword,
+      });
+
+      const result = await userService.update(1, updateUserDto);
+
+      expect(result).toEqual({
+        ...user,
+        password: hashedPassword,
+      });
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
+        where:{
+          id:1,
+        },
+      });
+      expect(bcrypt.hash).toHaveBeenCalledWith(updateUserDto.password, hashRounds);
+      expect(mockUserRepository.update).toHaveBeenCalledWith({
+        id: 1,
+      }, {
+        ...updateUserDto,
+        password: hashedPassword,
+      })
+    });
+
+    it('should throw a NotFoundException if user to update is not found', async ()=>{
+      jest.spyOn(mockUserRepository, 'findOne').mockResolvedValue(null);
+
+      const updateUserDto: UpdateUserDto = {
+        email: 'test@codefactory.ai',
+        password: '123123',
+      };
+
+      expect(userService.update(999, updateUserDto)).rejects.toThrow(NotFoundException);
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
+        where:{
+          id: 999,
+        },
+      });
+      expect(mockUserRepository.update).not.toHaveBeenCalled();
+    })
   });
 
   describe('remove', () => {
