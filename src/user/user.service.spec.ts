@@ -77,4 +77,34 @@ describe('UserService', () => {
       })
     });
   });
+
+  describe('remove', ()=>{
+    it('should delete a user by id', async ()=>{
+      const id = 999;
+
+      jest.spyOn(mockUserRepository, 'findOne').mockResolvedValue({
+        id:1,
+      });
+
+      const result = await userService.remove(id);
+
+      expect(result).toEqual(id);
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
+        where:{
+          id,
+        }
+      })
+    });
+
+    it('should throw a NotFoundException if user to delete is not found', ()=>{
+      jest.spyOn(mockUserRepository, 'findOne').mockResolvedValue(null);
+
+      expect(userService.remove(999)).rejects.toThrow(NotFoundException);
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
+        where:{
+          id:999,
+        }
+      })
+    })
+  });
 });
