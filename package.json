@@ -21,7 +21,9 @@
     "test:user": "jest --testPathPattern=src/user --coverage --collectCoverageFrom=src/user/**",
     "test:user:watch": "jest --watch --testPathPattern=src/user --coverage --collectCoverageFrom=src/user/**",
     "test:auth": "jest --testPathPattern=src/auth --coverage --collectCoverageFrom=src/auth/**",
-    "test:auth:watch": "jest --watch --testPathPattern=src/auth --coverage --collectCoverageFrom=src/auth/**"
+    "test:auth:watch": "jest --watch --testPathPattern=src/auth --coverage --collectCoverageFrom=src/auth/**",
+    "test:director": "jest --testPathPattern=src/director --coverage --collectCoverageFrom=src/director/**",
+    "test:director:watch": "jest --watch --testPathPattern=src/director --coverage --collectCoverageFrom=src/director/**"
   },
   "dependencies": {
     "@nestjs/cache-manager": "^2.2.2",
@@ -99,11 +101,15 @@
     "coveragePathIgnorePatterns": [
       "module.ts",
       "dto.ts",
-      "entity.ts"
+      "entity.ts",
+      "guard.ts",
+      "middleware.ts",
+      "strategy.ts",
+      "decorator.ts"
     ],
     "coverageDirectory": "./coverage",
     "testEnvironment": "node",
-    "moduleNameMapper":{
+    "moduleNameMapper": {
       "src/(.*)": "<rootDir>/src/$1"
     }
   },
