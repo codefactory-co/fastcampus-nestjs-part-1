@@ -37,15 +37,15 @@ export class MovieService {
     private readonly cacheManager: Cache,
   ) { }
 
-  async findRecent(){
+  async findRecent() {
     const cacheData = await this.cacheManager.get('MOVIE_RECENT');
 
-    if(cacheData){
+    if (cacheData) {
       return cacheData;
     }
 
     const data = await this.movieRepository.find({
-      order:{
+      order: {
         createdAt: 'DESC',
       },
       take: 10,
@@ -56,12 +56,27 @@ export class MovieService {
     return data;
   }
 
+  /* istanbul ignore next */
+  async getMovies() {
+    return this.movieRepository.createQueryBuilder('movie')
+      .leftJoinAndSelect('movie.director', 'director')
+      .leftJoinAndSelect('movie.genres', 'genres');
+  }
+
+  /* istanbul ignore next */
+  async getLikedMovies(movieIds: number[], userId: number){
+    return this.movieUserLikeRepository.createQueryBuilder('mul')
+        .leftJoinAndSelect('mul.user', 'user')
+        .leftJoinAndSelect('mul.movie', 'movie')
+        .where('movie.id IN(:...movieIds)', { movieIds })
+        .andWhere('user.id = :userId', { userId })
+        .getMany()
+  }
+
   async findAll(dto: GetMoviesDto, userId?: number) {
     const { title } = dto;
 
-    const qb = await this.movieRepository.createQueryBuilder('movie')
-      .leftJoinAndSelect('movie.director', 'director')
-      .leftJoinAndSelect('movie.genres', 'genres');
+    const qb = await this.getMovies();
 
     if (title) {
       qb.where('movie.title LIKE :title', { title: `%${title}%` })
@@ -74,12 +89,7 @@ export class MovieService {
     if (userId) {
       const movieIds = data.map(movie => movie.id);
 
-      const likedMovies = await this.movieUserLikeRepository.createQueryBuilder('mul')
-        .leftJoinAndSelect('mul.user', 'user')
-        .leftJoinAndSelect('mul.movie', 'movie')
-        .where('movie.id IN(:...movieIds)', { movieIds })
-        .andWhere('user.id = :userId', { userId })
-        .getMany();
+      const likedMovies = await this.getLikedMovies(movieIds, userId);
 
       /**
        * {
