@@ -223,6 +223,31 @@ export class MovieService {
     });
   }
 
+  updateMovie(qr: QueryRunner, movieUpdateFields: UpdateMovieDto, id: number){
+    return qr.manager.createQueryBuilder()
+        .update(Movie)
+        .set(movieUpdateFields)
+        .where('id = :id', { id })
+        .execute()
+  }
+
+  updateMovieDetail(qr: QueryRunner, detail: string, movie: Movie){
+    return qr.manager.createQueryBuilder()
+          .update(MovieDetail)
+          .set({
+            detail,
+          })
+          .where('id = :id', { id: movie.detail.id })
+          .execute();
+  }
+
+  updateMovieGenreRelation(qr: QueryRunner, id: number, newGenres: Genre[], movie: Movie){
+    return qr.manager.createQueryBuilder()
+          .relation(Movie, 'genres')
+          .of(id)
+          .addAndRemove(newGenres.map(genre => genre.id), movie.genres.map(genre => genre.id));
+  }
+
   async update(id: number, updateMovieDto: UpdateMovieDto) {
     const qr = this.dataSource.createQueryRunner();
     await qr.connect();
@@ -291,11 +316,7 @@ export class MovieService {
         ...(newDirector && { director: newDirector })
       }
 
-      await qr.manager.createQueryBuilder()
-        .update(Movie)
-        .set(movieUpdateFields)
-        .where('id = :id', { id })
-        .execute()
+      await this.updateMovie(qr, updateMovieDto, id);
 
       // await this.movieRepository.update(
       //   { id },
@@ -303,13 +324,7 @@ export class MovieService {
       // );
 
       if (detail) {
-        await qr.manager.createQueryBuilder()
-          .update(MovieDetail)
-          .set({
-            detail,
-          })
-          .where('id = :id', { id: movie.detail.id })
-          .execute();
+        await this.updateMovieDetail(qr, detail, movie);
 
         // await this.movieDetailRepository.update(
         //   {
@@ -322,10 +337,7 @@ export class MovieService {
       }
 
       if (newGenres) {
-        await qr.manager.createQueryBuilder()
-          .relation(Movie, 'genres')
-          .of(id)
-          .addAndRemove(newGenres.map(genre => genre.id), movie.genres.map(genre => genre.id));
+        await this.updateMovieGenreRelation(qr, id, newGenres, movie);
       }
 
       // const newMovie = await this.movieRepository.findOne({
