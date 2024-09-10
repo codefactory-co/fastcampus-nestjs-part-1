@@ -158,5 +158,63 @@ describe('MovieController (e2e)', () => {
 
       expect(statusCode).toBe(404);
     });
-  })
+  });
+
+  describe('[POST /movie]', () => {
+    it('should create movie', async () => {
+      const { body: { fileName } } = await request(app.getHttpServer())
+        .post(`/common/video`)
+        .set('authorization', `Bearer ${token}`)
+        .attach('video', Buffer.from('test'), 'movie.mp4')
+        .expect(201);
+
+      const dto = {
+        title: 'Test Movie',
+        detail: 'Test Movie Detail',
+        directorId: directors[0].id,
+        genreIds: genres.map(x => x.id),
+        movieFileName: fileName,
+      };
+
+      const { body, statusCode } = await request(app.getHttpServer())
+        .post(`/movie`)
+        .set('authorization', `Bearer ${token}`)
+        .send(dto);
+
+      expect(statusCode).toBe(201);
+
+      expect(body).toBeDefined();
+      expect(body.title).toBe(dto.title);
+      expect(body.detail.detail).toBe(dto.detail);
+      expect(body.director.id).toBe(dto.directorId);
+      expect(body.genres.map(x => x.id)).toEqual(dto.genreIds);
+      expect(body.movieFilePath).toContain(fileName);
+    });
+  });
+
+  describe('[PATCH /movie/{id}]', () => {
+    it('should update movie if exists', async () => {
+      const dto = {
+        title: 'Updated Test Movie',
+        detail: 'Updated Test Movie Detail',
+        directorId: directors[0].id,
+        genreIds: [genres[0].id],
+      };
+
+      const movieId = movies[0].id;
+
+      const { body, statusCode } = await request(app.getHttpServer())
+        .patch(`/movie/${movieId}`)
+        .set('authorization', `Bearer ${token}`)
+        .send(dto);
+
+      expect(statusCode).toBe(200);
+
+      expect(body).toBeDefined();
+      expect(body.title).toBe(dto.title);
+      expect(body.detail.detail).toBe(dto.detail);
+      expect(body.director.id).toBe(dto.directorId);
+      expect(body.genres.map(x => x.id)).toEqual(dto.genreIds);
+    });
+  });
 });
