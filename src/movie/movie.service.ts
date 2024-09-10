@@ -322,7 +322,7 @@ export class MovieService {
         ...(newDirector && { director: newDirector })
       }
 
-      await this.updateMovie(qr, updateMovieDto, id);
+      await this.updateMovie(qr, movieUpdateFields, id);
 
       // await this.movieRepository.update(
       //   { id },
