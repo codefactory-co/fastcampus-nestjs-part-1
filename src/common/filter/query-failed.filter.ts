@@ -10,6 +10,8 @@ export class QueryFailedExceptionFilter implements ExceptionFilter{
 
         const status = 400;
 
+        console.log(exception);
+
         let message = '데이터베이스 에러 발생!';
 
         if(exception.message.includes('duplicate key')){

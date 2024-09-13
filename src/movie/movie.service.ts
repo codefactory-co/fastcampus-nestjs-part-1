@@ -89,7 +89,7 @@ export class MovieService {
     if (userId) {
       const movieIds = data.map(movie => movie.id);
 
-      const likedMovies = await this.getLikedMovies(movieIds, userId);
+      const likedMovies = movieIds.length < 1 ? [] : await this.getLikedMovies(movieIds, userId)
 
       /**
        * {
