@@ -64,8 +64,11 @@ import * as winston from 'winston';
           User,
         ],
         synchronize: true,
+        ssl: {
+          rejectUnauthorized: false,
+        }
       }),
-      inject: [ConfigService]
+      inject: [ConfigService],
     }),
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'public'),
