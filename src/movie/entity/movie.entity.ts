@@ -57,7 +57,7 @@ export class Movie extends BaseTable {
     detail: MovieDetail;
 
     @Column()
-    @Transform(({ value }) => `http://localhost:3000/${value}`)
+    @Transform(({ value }) => process.env.ENV === 'prod' ? `http://${process.env.BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${value}` : `http://localhost:3000/${value}`)
     movieFilePath: string;
 
     @ManyToOne(

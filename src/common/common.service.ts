@@ -1,11 +1,68 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { SelectQueryBuilder } from "typeorm";
 import { PagePaginationDto } from "./dto/page-pagination.dto";
 import { CursorPaginationDto } from "./dto/cursor-pagination.dto";
+import * as AWS from 'aws-sdk';
+import { v4 as Uuid } from 'uuid';
+import { ConfigService } from "@nestjs/config";
+import { envVariableKeys } from "./const/env.const";
 
 @Injectable()
 export class CommonService {
-    constructor() { }
+    private s3: AWS.S3;
+
+    constructor(
+        private readonly configService: ConfigService
+    ) {
+        AWS.config.update({
+            credentials: {
+                accessKeyId: configService.get<string>(envVariableKeys.awsAccessKeyId),
+                secretAccessKey: configService.get<string>(envVariableKeys.awsSecretAccessKey),
+            },
+            region: configService.get<string>(envVariableKeys.awsRegion),
+        })
+
+        this.s3 = new AWS.S3();
+    }
+
+    async saveMovieToPermanentStorage(fileName: string) {
+        try {
+            const bucketName = this.configService.get<string>(envVariableKeys.bucketName);
+            await this.s3.copyObject({
+                Bucket: bucketName,
+                CopySource: `${bucketName}/public/temp/${fileName}`,
+                Key: `public/movie/${fileName}`,
+                ACL: 'public-read',
+            }).promise();
+
+            await this.s3
+                .deleteObject({
+                    Bucket: bucketName,
+                    Key: `public/temp/${fileName}`,
+                }).promise();
+        } catch (e) {
+            console.log(e);
+            throw new InternalServerErrorException('S3 에러!');
+        }
+    }
+
+    async createPresignedUrl(expiresIn = 300) {
+        const params = {
+            Bucket: this.configService.get<string>(envVariableKeys.bucketName),
+            Key: `public/temp/${Uuid()}.mp4`,
+            Expires: expiresIn,
+            ACL: 'public-read',
+        };
+
+        try {
+            const url = await this.s3.getSignedUrlPromise('putObject', params);
+
+            return url;
+        } catch (error) {
+            console.log(error);
+            throw new InternalServerErrorException('S3 Presigned URL 생성 실패');
+        }
+    }
 
     applyPagePaginationParamsToQb<T>(qb: SelectQueryBuilder<T>, dto: PagePaginationDto) {
         const { page, take } = dto;
@@ -34,7 +91,7 @@ export class CommonService {
 
             order = cursorObj.order;
 
-            const {values} = cursorObj;
+            const { values } = cursorObj;
 
             /// WHERE (column1 > value1) 
             /// OR      (column1 = value1 AND column2 < value2)
@@ -42,7 +99,7 @@ export class CommonService {
             /// (movie.column1, movie.column2, movie.column3) > (:value1, :value2, :value3)
 
             const columns = Object.keys(values);
-            const comparisonOperator = order.some((o)=> o.endsWith('DESC')) ? '<' : '>';
+            const comparisonOperator = order.some((o) => o.endsWith('DESC')) ? '<' : '>';
             const whereConditions = columns.map(c => `${qb.alias}.${c}`).join(',');
             const whereParams = columns.map(c => `:${c}`).join(',')
 
