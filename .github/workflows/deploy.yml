@@ -1,0 +1,53 @@
+name: Deploy to AWS Elastic Beanstalk
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set Up NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install Depencies
+        run: npm i
+
+      - name: Build Project
+        run: npm run build
+
+      - name: Zip Artfact For Deployment
+        run: zip -r deploy.zip .
+
+      - name: Upload To S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          AWS_REGION: ${{secrets.AWS_REGION}}
+        run: |
+          aws configure set region $AWS_REGION
+          aws s3 cp deploy.zip s3://nestjs-netflix-bucket/deploy.zip
+
+      - name: Deploy To AWS Elastic Beanstalk
+        env:
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          AWS_REGION: ${{secrets.AWS_REGION}}
+        run: |
+          aws elasticbeanstalk create-application-version \
+            --application-name "nestjs-netflix" \
+            --version-label $GITHUB_SHA \
+            --source-bundle S3Bucket="nestjs-netflix-bucket",S3Key="deploy.zip"
+
+          aws elasticbeanstalk update-environment \
+            --application-name "nestjs-netflix" \
+            --environment-name "Nestjs-netflix-env" \
+            --version-label $GITHUB_SHA
