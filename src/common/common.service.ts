@@ -2,27 +2,27 @@ import { BadRequestException, Injectable, InternalServerErrorException } from "@
 import { SelectQueryBuilder } from "typeorm";
 import { PagePaginationDto } from "./dto/page-pagination.dto";
 import { CursorPaginationDto } from "./dto/cursor-pagination.dto";
-import * as AWS from 'aws-sdk';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { ObjectCannedACL, PutObjectCommand, S3 } from '@aws-sdk/client-s3';
 import { v4 as Uuid } from 'uuid';
 import { ConfigService } from "@nestjs/config";
 import { envVariableKeys } from "./const/env.const";
 
 @Injectable()
 export class CommonService {
-    private s3: AWS.S3;
+    private s3: S3;
 
     constructor(
         private readonly configService: ConfigService
     ) {
-        AWS.config.update({
+        this.s3 = new S3({
             credentials: {
                 accessKeyId: configService.get<string>(envVariableKeys.awsAccessKeyId),
                 secretAccessKey: configService.get<string>(envVariableKeys.awsSecretAccessKey),
             },
-            region: configService.get<string>(envVariableKeys.awsRegion),
-        })
 
-        this.s3 = new AWS.S3();
+            region: configService.get<string>(envVariableKeys.awsRegion),
+        });
     }
 
     async saveMovieToPermanentStorage(fileName: string) {
@@ -33,13 +33,13 @@ export class CommonService {
                 CopySource: `${bucketName}/public/temp/${fileName}`,
                 Key: `public/movie/${fileName}`,
                 ACL: 'public-read',
-            }).promise();
+            });
 
             await this.s3
                 .deleteObject({
                     Bucket: bucketName,
                     Key: `public/temp/${fileName}`,
-                }).promise();
+                });
         } catch (e) {
             console.log(e);
             throw new InternalServerErrorException('S3 에러!');
@@ -50,12 +50,13 @@ export class CommonService {
         const params = {
             Bucket: this.configService.get<string>(envVariableKeys.bucketName),
             Key: `public/temp/${Uuid()}.mp4`,
-            Expires: expiresIn,
-            ACL: 'public-read',
+            ACL: ObjectCannedACL.public_read,
         };
 
         try {
-            const url = await this.s3.getSignedUrlPromise('putObject', params);
+            const url = await getSignedUrl(this.s3, new PutObjectCommand(params), {
+                expiresIn,
+            });
 
             return url;
         } catch (error) {
