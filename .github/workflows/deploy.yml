@@ -9,6 +9,20 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -17,12 +31,76 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-      
+
+      - name: Create Env File
+        env:
+          ENV: ${{secrets.ENV}}
+          DB_TYPE: ${{secrets.DB_TYPE}}
+          DB_HOST: ${{secrets.DB_HOST}}
+          DB_PORT: ${{secrets.DB_PORT}}
+          DB_USERNAME: ${{secrets.DB_USERNAME}}
+          DB_PASSWORD: ${{secrets.DB_PASSWORD}}
+          DB_DATABASE: ${{secrets.DB_DATABASE}}
+          HASH_ROUNDS: ${{secrets.HASH_ROUNDS}}
+          ACCESS_TOKEN_SECRET: ${{secrets.ACCESS_TOKEN_SECRET}}
+          REFRESH_TOKEN_SECRET: ${{secrets.REFRESH_TOKEN_SECRET}}
+          AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          AWS_REGION: ${{secrets.AWS_REGION}}
+          BUCKET_NAME: ${{secrets.BUCKET_NAME}}
+        run: |
+          touch test.env
+          echo ENV="test" >> test.env
+          echo DB_TYPE="$DB_TYPE" >> test.env
+          echo DB_HOST="localhost" >> test.env
+          echo DB_PORT="$DB_PORT" >> test.env
+          echo DB_USERNAME="$DB_USERNAME" >> test.env
+          echo DB_PASSWORD="$DB_PASSWORD" >> test.env
+          echo DB_DATABASE="$DB_DATABASE" >> test.env
+          echo HASH_ROUNDS="$HASH_ROUNDS" >> test.env
+          echo ACCESS_TOKEN_SECRET="$ACCESS_TOKEN_SECRET" >> test.env
+          echo REFRESH_TOKEN_SECRET="$REFRESH_TOKEN_SECRET" >> test.env
+          echo AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" >> test.env
+          echo AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" >> test.env
+          echo AWS_REGION="$AWS_REGION" >> test.env
+          echo BUCKET_NAME="$BUCKET_NAME" >> test.env
+          echo "test.env created"
+          cat test.env
+
+          touch env.env
+          echo ENV="$ENV" >> .env
+          echo DB_TYPE="$DB_TYPE" >> .env
+          echo DB_HOST="$DB_HOST" >> .env
+          echo DB_PORT="$DB_PORT" >> .env
+          echo DB_USERNAME="$DB_USERNAME" >> .env
+          echo DB_PASSWORD="$DB_PASSWORD" >> .env
+          echo DB_DATABASE="$DB_DATABASE" >> .env
+          echo HASH_ROUNDS="$HASH_ROUNDS" >> .env
+          echo ACCESS_TOKEN_SECRET="$ACCESS_TOKEN_SECRET" >> .env
+          echo REFRESH_TOKEN_SECRET="$REFRESH_TOKEN_SECRET" >> .env
+          echo AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" >> .env
+          echo AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" >> .env
+          echo AWS_REGION="$AWS_REGION" >> .env
+          echo BUCKET_NAME="$BUCKET_NAME" >> .env
+          echo ".env created"
+          cat .env
+
+      - name: Create Folders
+        run: |
+          mkdir -p ./public/movie
+          mkdir -p ./public/temp
+
       - name: Install Depencies
         run: npm i
 
       - name: Build Project
         run: npm run build
+
+      - name: Install Typeorm
+        run: npm i -g typeorm
+
+      - name: Run Migration
+        run: typeorm migration:run -d ./dist/database/data-source.js
 
       - name: Zip Artfact For Deployment
         run: zip -r deploy.zip .
