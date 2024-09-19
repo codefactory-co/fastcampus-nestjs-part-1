@@ -30,6 +30,7 @@ import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
 import { Chat } from './chat/entity/chat.entity';
 import { ChatRoom } from './chat/entity/chat-room.entity';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -118,7 +119,8 @@ import { ChatRoom } from './chat/entity/chat-room.entity';
     DirectorModule,
     GenreModule,
     AuthModule,
-    UserModule
+    UserModule,
+    ChatModule,
   ],
   providers: [
     {
