@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { Role, User } from './entities/user.entity';
+import { Role, User } from './entity/user.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 const mockedUserService = {

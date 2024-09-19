@@ -4,9 +4,9 @@ import { ChildEntity, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, M
 import { BaseTable } from "../../common/entity/base-table.entity";
 import { MovieDetail } from "./movie-detail.entity";
 import { Director } from "src/director/entity/director.entity";
-import { Genre } from "src/genre/entities/genre.entity";
+import { Genre } from "src/genre/entity/genre.entity";
 import { MovieFilePipe } from "../pipe/movie-file.pipe";
-import { User } from "src/user/entities/user.entity";
+import { User } from "src/user/entity/user.entity";
 import { MovieUserLike } from "./movie-user-like.entity";
 
 /// ManyToOne Director -> 감독은 여러개의 영화를 만들 수 있음

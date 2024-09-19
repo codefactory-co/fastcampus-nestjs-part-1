@@ -8,10 +8,10 @@ import { MovieDetail } from './movie/entity/movie-detail.entity';
 import { DirectorModule } from './director/director.module';
 import { Director } from './director/entity/director.entity';
 import { GenreModule } from './genre/genre.module';
-import { Genre } from './genre/entities/genre.entity';
+import { Genre } from './genre/entity/genre.entity';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
-import { User } from './user/entities/user.entity';
+import { User } from './user/entity/user.entity';
 import { envVariableKeys } from './common/const/env.const';
 import { BearerTokenMiddleware } from './auth/middleware/bearer-token.middleware';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -27,8 +27,9 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ThrottleInterceptor } from './common/interceptor/throttle.interceptor';
 import { ScheduleModule } from '@nestjs/schedule';
 import { WinstonModule } from 'nest-winston';
-import { ChatModule } from './chat/chat.module';
 import * as winston from 'winston';
+import { Chat } from './chat/entity/chat.entity';
+import { ChatRoom } from './chat/entity/chat-room.entity';
 
 @Module({
   imports: [
@@ -67,6 +68,8 @@ import * as winston from 'winston';
           Director,
           Genre,
           User,
+          Chat,
+          ChatRoom,
         ],
         synchronize: configService.get<string>(envVariableKeys.env) === 'prod' ? false : true,
         ...(configService.get<string>(envVariableKeys.env) === 'prod' && {
@@ -115,8 +118,7 @@ import * as winston from 'winston';
     DirectorModule,
     GenreModule,
     AuthModule,
-    UserModule,
-    ChatModule
+    UserModule
   ],
   providers: [
     {
