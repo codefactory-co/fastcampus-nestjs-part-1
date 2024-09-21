@@ -1,7 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { MovieModule } from './movie/movie.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConditionalModule, ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 import { Movie } from './movie/entity/movie.entity';
 import { MovieDetail } from './movie/entity/movie-detail.entity';
@@ -31,6 +31,7 @@ import * as winston from 'winston';
 import { Chat } from './chat/entity/chat.entity';
 import { ChatRoom } from './chat/entity/chat-room.entity';
 import { ChatModule } from './chat/chat.module';
+import { WorkerModule } from './worker/worker.module';
 
 @Module({
   imports: [
@@ -121,6 +122,10 @@ import { ChatModule } from './chat/chat.module';
     AuthModule,
     UserModule,
     ChatModule,
+    ConditionalModule.registerWhen(
+      WorkerModule,
+      (env: NodeJS.ProcessEnv) => env['TYPE'] === 'worker',
+    ),
   ],
   providers: [
     {

@@ -2,6 +2,8 @@ import { BadRequestException, Controller, Post, UploadedFile, UseInterceptors } 
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CommonService } from './common.service';
+import { Queue } from 'bullmq';
+import { InjectQueue } from '@nestjs/bull';
 
 @Controller('common')
 @ApiBearerAuth()
@@ -9,6 +11,8 @@ import { CommonService } from './common.service';
 export class CommonController {
     constructor(
         private readonly commonService: CommonService,
+        @InjectQueue('thumbnail-generation')
+        private readonly thumbnailQueue: Queue,
     ){
 
     }
@@ -29,9 +33,14 @@ export class CommonController {
             return callback(null, true);
         }
     }))
-    createVideo(
+    async createVideo(
         @UploadedFile() movie: Express.Multer.File,
     ) {
+        await this.thumbnailQueue.add('thumbnail', {
+            videoId: movie.filename,
+            videoPath: movie.path,
+        });
+
         return {
             fileName: movie.filename,
         }
