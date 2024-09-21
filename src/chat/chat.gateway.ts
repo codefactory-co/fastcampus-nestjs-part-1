@@ -6,6 +6,7 @@ import { UseInterceptors } from '@nestjs/common';
 import { WsTransactionInterceptor } from 'src/common/interceptor/ws-transaction.interceptor';
 import { WsQueryRunner } from 'src/common/decorator/ws-query-runner.decorator';
 import { QueryRunner } from 'typeorm';
+import { CreateChatDto } from './dto/create-chat.dto';
 
 @WebSocketGateway()
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -45,10 +46,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('sendMessage')
   @UseInterceptors(WsTransactionInterceptor)
   async handleMessage(
-    @MessageBody() body: { message: string },
+    @MessageBody() body: CreateChatDto,
     @ConnectedSocket() client: Socket,
     @WsQueryRunner() qr: QueryRunner,
   ) {
-
+    const payload = client.data.user;
+    await this.chatService.createMessage(payload, body, qr);
   }
 }
