@@ -2,3 +2,86 @@ datasource db {
     provider    = "postgresql"
     url         = env("DB_URL")
 }
+
+generator client {
+    provider = "prisma-client-js"
+    previewFeatures = ["prismaSchemaFolder", "omitApi"]
+}
+
+enum Role {
+    admin
+    paidUser
+    user
+}
+
+model User {
+    id              Int             @id @default(autoincrement())
+    email           String          @unique
+    password        String
+    role            Role            @default(user)
+    createdMovies   Movie[]
+    likedMovies     MovieUserLike[]
+    chats           Chat[]
+    chatRooms       ChatRoom[]
+}
+
+model Movie {
+    id              Int             @id @default(autoincrement())
+    creator         User            @relation(fields: [creatorId], references: [id])
+    creatorId       Int
+    title           String          @unique
+    genres          Genre[]
+    likeCount       Int             @default(0)
+    dislikeCount    Int             @default(0)
+    detail          MovieDetail     @relation(fields: [detailId], references: [id])
+    detailId        Int             @unique
+    movieFilePath   String
+    director        Director        @relation(fields: [directorId], references: [id])
+    directorId      Int
+    likedUsers      MovieUserLike[]
+}
+
+model MovieUserLike {
+    movie   Movie   @relation(fields: [movieId], references: [id])
+    movieId Int
+    user    User    @relation(fields: [userId], references: [id])
+    userId  Int
+    isLike  Boolean
+
+    @@id([movieId, userId])
+}
+
+model MovieDetail {
+    id      Int     @id @default(autoincrement())
+    detail  String
+    movie   Movie?
+}
+
+model Chat {
+    id          Int         @id @default(autoincrement())
+    author      User        @relation(fields: [authorId], references: [id])
+    authorId    Int
+    message     String
+    chatRoom    ChatRoom    @relation(fields: [chatRoomId], references: [id])
+    chatRoomId  Int
+}
+
+model ChatRoom {
+    id      Int     @id @default(autoincrement())
+    users   User[]
+    chats   Chat[]
+}
+
+model Genre {
+    id      Int     @id @default(autoincrement())
+    name    String  @unique
+    movies  Movie[]
+}
+
+model Director {
+    id          Int         @id @default(autoincrement())
+    name        String
+    dob         DateTime
+    nationality String
+    movies      Movie[]
+}
