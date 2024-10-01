@@ -13,7 +13,7 @@ export class CommonController {
         private readonly commonService: CommonService,
         @InjectQueue('thumbnail-generation')
         private readonly thumbnailQueue: Queue,
-    ){
+    ) {
 
     }
 
@@ -39,6 +39,13 @@ export class CommonController {
         await this.thumbnailQueue.add('thumbnail', {
             videoId: movie.filename,
             videoPath: movie.path,
+        }, {
+            priority: 1,
+            delay: 100,
+            attempts: 3,
+            lifo: true,
+            removeOnComplete: true,
+            removeOnFail: true,
         });
 
         return {
@@ -47,7 +54,7 @@ export class CommonController {
     }
 
     @Post('presigned-url')
-    async createPresignedUrl(){
+    async createPresignedUrl() {
         return {
             url: await this.commonService.createPresignedUrl(),
         }

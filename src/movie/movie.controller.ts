@@ -1,4 +1,4 @@
-import { Controller, Request, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, ClassSerializerInterceptor, UsePipes, ValidationPipe, ParseIntPipe, BadRequestException, NotFoundException, ParseFloatPipe, ParseBoolPipe, ParseArrayPipe, ParseUUIDPipe, ParseEnumPipe, DefaultValuePipe, UseGuards, UploadedFile, UploadedFiles, Version, VERSION_NEUTRAL } from '@nestjs/common';
+import { Controller, Request, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors, ClassSerializerInterceptor, UsePipes, ValidationPipe, ParseIntPipe, BadRequestException, NotFoundException, ParseFloatPipe, ParseBoolPipe, ParseArrayPipe, ParseUUIDPipe, ParseEnumPipe, DefaultValuePipe, UseGuards, UploadedFile, UploadedFiles, Version, VERSION_NEUTRAL, Req } from '@nestjs/common';
 import { MovieService } from './movie.service';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { UpdateMovieDto } from './dto/update-movie.dto';
@@ -66,7 +66,19 @@ export class MovieController {
   @Public()
   getMovie(
     @Param('id', ParseIntPipe) id: number,
+    @Req() request: any,
   ) {
+    const session = request.session;
+
+    const movieCount = session.movieCount ?? {};
+
+    request.session.movieCount = {
+      ...movieCount,
+      [id]: movieCount[id] ? movieCount[id] + 1 : 1,
+    }
+
+    console.log(session);
+    
     return this.movieService.findOne(id);
   }
 
