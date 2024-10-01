@@ -9,7 +9,6 @@ import * as bcrypt from 'bcrypt';
 import { envVariableKeys } from 'src/common/const/env.const';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'src/common/prisma.service';
-import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class UserService {
@@ -110,9 +109,9 @@ export class UserService {
       throw new NotFoundException('존재하지 않는 사용자입니다!');
     }
 
-    let input: Prisma.UserUpdateInput = {
+    let input = {
       ...updateUserDto,
-    };
+    }
 
     if(password){
       const hash = await bcrypt.hash(password, this.configService.get<number>(envVariableKeys.hashRounds));
