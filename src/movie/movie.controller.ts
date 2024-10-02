@@ -6,7 +6,6 @@ import { MovieTitleValidationPipe } from './pipe/movie-title-validation.pipe';
 import { AuthGuard } from 'src/auth/guard/auth.guard';
 import { Public } from 'src/auth/decorator/public.decorator';
 import { RBAC } from 'src/auth/decorator/rbac.decorator';
-import { Role } from 'src/user/entity/user.entity';
 import { GetMoviesDto } from './dto/get-movies.dto';
 import { CacheInterceptor } from 'src/common/interceptor/cache.interceptor';
 import { TransactionInterceptor } from 'src/common/interceptor/transaction.interceptor';
@@ -19,6 +18,7 @@ import { CacheKey, CacheTTL, CacheInterceptor as CI } from '@nestjs/cache-manage
 import { Throttle } from 'src/common/decorator/throttle.decorator';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Movie } from './entity/movie.entity';
+import { Role } from '@prisma/client';
 
 @Controller('movie')
 @ApiBearerAuth()
