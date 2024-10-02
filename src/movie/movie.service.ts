@@ -17,6 +17,7 @@ import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { ConfigService } from '@nestjs/config';
 import { envVariableKeys } from 'src/common/const/env.const';
 import { PrismaService } from 'src/common/prisma.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class MovieService {
@@ -282,11 +283,11 @@ export class MovieService {
         }
       });
 
-      return this.prisma.movie.findUnique({
-        where:{
+      return prisma.movie.findUnique({
+        where: {
           id: movie.id,
         },
-        include:{
+        include: {
           detail: true,
           director: true,
           genres: true,
@@ -368,17 +369,13 @@ export class MovieService {
   }
 
   async update(id: number, updateMovieDto: UpdateMovieDto) {
-    const qr = this.dataSource.createQueryRunner();
-    await qr.connect();
-    await qr.startTransaction();
-
-    try {
-
-      const movie = await qr.manager.findOne(Movie, {
-        where: {
-          id,
-        },
-        relations: ['detail', 'genres']
+    return this.prisma.$transaction(async (prisma) => {
+      const movie = await prisma.movie.findUnique({
+        where: { id },
+        include: {
+          detail: true,
+          genres: true,
+        }
       });
 
       if (!movie) {
@@ -387,105 +384,177 @@ export class MovieService {
 
       const { detail, directorId, genreIds, ...movieRest } = updateMovieDto;
 
-      let newDirector;
+      let movieUpdateParams: Prisma.MovieUpdateInput = {
+        ...movieRest,
+      };
+
 
       if (directorId) {
-        const director = await qr.manager.findOne(Director, {
-          where: {
-            id: directorId,
-          }
-        });
+        const director = await prisma.director.findUnique({
+          where: { id: directorId },
+        })
 
         if (!director) {
           throw new NotFoundException('존재하지 않는 ID의 감독입니다!');
         }
 
-        newDirector = director;
+        movieUpdateParams.director = { connect: { id: directorId } }
       }
 
-      let newGenres;
-
       if (genreIds) {
-        const genres = await qr.manager.find(Genre, {
-          where: {
-            id: In(genreIds),
-          },
+        const genres = await prisma.genre.findMany({
+          where: { id: { in: genreIds } }
         });
 
-        if (genres.length !== updateMovieDto.genreIds.length) {
+        if (genres.length !== genreIds.length) {
           throw new NotFoundException(`존재하지 않는 장르가 있습니다! 존재하는 ids -> ${genres.map(genre => genre.id).join(',')}`);
         }
 
-        newGenres = genres;
+        movieUpdateParams.genres = { set: genres.map((genre) => ({ id: genre.id })) };
       }
 
-      /**
-       * {
-       *  ...movieRest,
-       *  {director:director}
-       * }
-       * 
-       * {
-       *  ...movieRest,
-       *  director: director
-       * }
-       */
-      const movieUpdateFields = {
-        ...movieRest,
-        ...(newDirector && { director: newDirector })
-      }
-
-      await this.updateMovie(qr, movieUpdateFields, id);
-
-      // await this.movieRepository.update(
-      //   { id },
-      //   movieUpdateFields,
-      // );
+      await prisma.movie.update({
+        where: { id },
+        data: movieUpdateParams,
+      })
 
       if (detail) {
-        await this.updateMovieDetail(qr, detail, movie);
-
-        // await this.movieDetailRepository.update(
-        //   {
-        //     id: movie.detail.id,
-        //   },
-        //   {
-        //     detail,
-        //   }
-        // )
+        await prisma.movieDetail.update({
+          where: { id: movie.detail.id },
+          data: { detail }
+        })
       }
 
-      if (newGenres) {
-        await this.updateMovieGenreRelation(qr, id, newGenres, movie);
-      }
-
-      // const newMovie = await this.movieRepository.findOne({
-      //   where: {
-      //     id,
-      //   },
-      //   relations: ['detail', 'director']
-      // });
-
-      // newMovie.genres = newGenres;
-
-      // await this.movieRepository.save(newMovie);
-      await qr.commitTransaction();
-
-      return this.movieRepository.findOne({
-        where: {
-          id,
-        },
-        relations: ['detail', 'director', 'genres']
-      });
-    } catch (e) {
-      await qr.rollbackTransaction();
-
-      throw e;
-    } finally {
-      await qr.release();
-    }
-
+      return prisma.movie.findUnique({
+        where: { id },
+        include: {
+          detail: true,
+          director: true,
+          genres: true,
+        }
+      })
+    })
   }
+
+  // async update(id: number, updateMovieDto: UpdateMovieDto) {
+  //   const qr = this.dataSource.createQueryRunner();
+  //   await qr.connect();
+  //   await qr.startTransaction();
+
+  //   try {
+
+  //     // const movie = await qr.manager.findOne(Movie, {
+  //     //   where: {
+  //     //     id,
+  //     //   },
+  //     //   relations: ['detail', 'genres']
+  //     // });
+
+  //     // if (!movie) {
+  //     //   throw new NotFoundException('존재하지 않는 ID의 영화입니다!');
+  //     // }
+
+  //     // const { detail, directorId, genreIds, ...movieRest } = updateMovieDto;
+
+  //     let newDirector;
+
+  //     if (directorId) {
+  //       // const director = await qr.manager.findOne(Director, {
+  //       //   where: {
+  //       //     id: directorId,
+  //       //   }
+  //       // });
+
+  //       // if (!director) {
+  //       //   throw new NotFoundException('존재하지 않는 ID의 감독입니다!');
+  //       // }
+
+  //       // newDirector = director;
+  //     }
+
+  //     let newGenres;
+
+  //     if (genreIds) {
+  //       // const genres = await qr.manager.find(Genre, {
+  //       //   where: {
+  //       //     id: In(genreIds),
+  //       //   },
+  //       // });
+
+  //       // if (genres.length !== updateMovieDto.genreIds.length) {
+  //       //   throw new NotFoundException(`존재하지 않는 장르가 있습니다! 존재하는 ids -> ${genres.map(genre => genre.id).join(',')}`);
+  //       // }
+
+  //       // newGenres = genres;
+  //     }
+
+  //     /**
+  //      * {
+  //      *  ...movieRest,
+  //      *  {director:director}
+  //      * }
+  //      * 
+  //      * {
+  //      *  ...movieRest,
+  //      *  director: director
+  //      * }
+  //      */
+  //     // const movieUpdateFields = {
+  //     //   ...movieRest,
+  //     //   ...(newDirector && { director: newDirector })
+  //     // }
+
+  //     // await this.updateMovie(qr, movieUpdateFields, id);
+
+  //     // await this.movieRepository.update(
+  //     //   { id },
+  //     //   movieUpdateFields,
+  //     // );
+
+  //     if (detail) {
+  //       await this.updateMovieDetail(qr, detail, movie);
+
+  //       // await this.movieDetailRepository.update(
+  //       //   {
+  //       //     id: movie.detail.id,
+  //       //   },
+  //       //   {
+  //       //     detail,
+  //       //   }
+  //       // )
+  //     }
+
+  //     if (newGenres) {
+  //       await this.updateMovieGenreRelation(qr, id, newGenres, movie);
+  //     }
+
+  //     // const newMovie = await this.movieRepository.findOne({
+  //     //   where: {
+  //     //     id,
+  //     //   },
+  //     //   relations: ['detail', 'director']
+  //     // });
+
+  //     // newMovie.genres = newGenres;
+
+  //     // await this.movieRepository.save(newMovie);
+  //     await qr.commitTransaction();
+
+  //     return this.movieRepository.findOne({
+  //       where: {
+  //         id,
+  //       },
+  //       relations: ['detail', 'director', 'genres']
+  //     });
+  //   } catch (e) {
+  //     await qr.rollbackTransaction();
+
+  //     throw e;
+  //   } finally {
+  //     await qr.release();
+  //   }
+
+  // }
 
   /* istanbul ignore next */
   deleteMovie(id: number) {
