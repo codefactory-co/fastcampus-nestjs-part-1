@@ -39,6 +39,9 @@ model Movie {
     director        Director        @relation(fields: [directorId], references: [id])
     directorId      Int
     likedUsers      MovieUserLike[]
+    createdAt       DateTime        @default(now())
+    updatedAt       DateTime        @updatedAt
+    version         Int             @default(0)
 }
 
 model MovieUserLike {
