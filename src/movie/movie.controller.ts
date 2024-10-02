@@ -84,16 +84,16 @@ export class MovieController {
 
   @Post()
   @RBAC(Role.admin)
-  @UseInterceptors(TransactionInterceptor)
+  // @UseInterceptors(TransactionInterceptor)
   postMovie(
     @Body() body: CreateMovieDto,
-    @QueryRunner() queryRunner: QR,
+    // @QueryRunner() queryRunner: QR,
     @UserId() userId: number,
   ) {
     return this.movieService.create(
       body,
       userId,
-      queryRunner,
+      // queryRunner,
     );
   }
 
