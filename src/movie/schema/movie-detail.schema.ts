@@ -17,3 +17,5 @@ export class MovieDetail extends Document {
     })
     movie: Movie
 }
+
+export const MovieDetailSchema = SchemaFactory.createForClass(MovieDetail);
