@@ -15,7 +15,7 @@ import { PrismaService } from 'src/common/prisma.service';
 import { Prisma } from '@prisma/client';
 import { InjectModel } from '@nestjs/mongoose';
 import { Movie } from './schema/movie.schema';
-import { Model, Types } from 'mongoose';
+import { Model, Types, Document } from 'mongoose';
 import { MovieDetail } from './schema/movie-detail.schema';
 import { Genre } from 'src/genre/schema/genre.schema';
 import { User } from 'src/user/schema/user.schema';
@@ -198,7 +198,13 @@ export class MovieService {
         data: movies.map((movie) => ({
           ...movie,
           likeStatus: movie._id.toString() in likedMovieMap ? likedMovieMap[movie._id.toString()] : null,
-        })),
+        })) as (Document<unknown, {}, Movie> & Movie & Required<{
+          _id: unknown;
+        }> & {
+          __v?: number;
+        } & {
+          likeStatus: boolean;
+        })[],
         nextCursor,
         hasNextPage,
       }
@@ -294,55 +300,110 @@ export class MovieService {
   }
 
   async create(createMovieDto: CreateMovieDto, userId: number) {
-    return this.prisma.$transaction(async (prisma) => {
-      const director = await prisma.director.findUnique({
-        where: {
-          id: createMovieDto.directorId,
-        }
-      });
+    const session = await this.movieModel.startSession();
+    session.startTransaction();
+
+    try {
+
+      const director = await this.directorModel.findById(createMovieDto.directorId).exec();
 
       if (!director) {
         throw new NotFoundException('존재하지 않는 ID의 감독입니다!');
       }
 
-      const genres = await prisma.genre.findMany({
-        where: {
-          id: {
-            in: createMovieDto.genreIds,
-          }
-        }
-      });
+      const genres = await this.genreModel
+        .find({ _id: { $in: createMovieDto.genreIds } })
+        .exec();
 
       if (genres.length !== createMovieDto.genreIds.length) {
         throw new NotFoundException(`존재하지 않는 장르가 있습니다! 존재하는 ids -> ${genres.map(genre => genre.id).join(',')}`);
       }
 
-      const movieDetail = await prisma.movieDetail.create({
-        data: { detail: createMovieDto.detail },
-      });
-
-      const movie = await prisma.movie.create({
-        data: {
-          title: createMovieDto.title,
-          movieFilePath: createMovieDto.movieFileName,
-          creator: { connect: { id: userId } },
-          director: { connect: { id: director.id } },
-          genres: { connect: genres.map((genre) => ({ id: genre.id })) },
-          detail: { connect: { id: movieDetail.id } }
+      const movieDetail = await this.movieDetailModel.create(
+        [
+          {
+            detail: createMovieDto.detail
+          },
+        ],
+        {
+          session,
         }
-      });
+      );
 
-      return prisma.movie.findUnique({
-        where: {
-          id: movie.id,
-        },
-        include: {
-          detail: true,
-          director: true,
-          genres: true,
+      const movie = await this.movieModel.create(
+        [
+          {
+            title: createMovieDto.title,
+            movieFilePath: createMovieDto.movieFileName,
+            creator: userId,
+            director: director._id,
+            genres: genres.map((genre) => genre._id),
+            detail: movieDetail[0]._id,
+          }
+        ],
+        {
+          session,
         }
-      });
-    });
+      );
+
+      await session.commitTransaction();
+
+      return this.movieModel.findById(movie[0]._id).populate('detail director genre').exec();
+    } catch (e) {
+      await session.abortTransaction();
+    } finally {
+      session.endSession();
+    }
+
+    // return this.prisma.$transaction(async (prisma) => {
+    //   // const director = await prisma.director.findUnique({
+    //   //   where: {
+    //   //     id: createMovieDto.directorId,
+    //   //   }
+    //   // });
+
+    //   // if (!director) {
+    //   //   throw new NotFoundException('존재하지 않는 ID의 감독입니다!');
+    //   // }
+
+    //   // const genres = await prisma.genre.findMany({
+    //   //   where: {
+    //   //     id: {
+    //   //       in: createMovieDto.genreIds,
+    //   //     }
+    //   //   }
+    //   // });
+
+    //   // if (genres.length !== createMovieDto.genreIds.length) {
+    //   //   throw new NotFoundException(`존재하지 않는 장르가 있습니다! 존재하는 ids -> ${genres.map(genre => genre.id).join(',')}`);
+    //   // }
+
+    //   // const movieDetail = await prisma.movieDetail.create({
+    //   //   data: { detail: createMovieDto.detail },
+    //   // });
+
+    //   // const movie = await prisma.movie.create({
+    //   //   data: {
+    //   //     title: createMovieDto.title,
+    //   //     movieFilePath: createMovieDto.movieFileName,
+    //   //     creator: { connect: { id: userId } },
+    //   //     director: { connect: { id: director.id } },
+    //   //     genres: { connect: genres.map((genre) => ({ id: genre.id })) },
+    //   //     detail: { connect: { id: movieDetail.id } }
+    //   //   }
+    //   // });
+
+    //   return prisma.movie.findUnique({
+    //     where: {
+    //       id: movie.id,
+    //     },
+    //     include: {
+    //       detail: true,
+    //       director: true,
+    //       genres: true,
+    //     }
+    //   });
+    // });
   }
 
   // async create(createMovieDto: CreateMovieDto, userId: number) {
@@ -418,14 +479,14 @@ export class MovieService {
   }
 
   async update(id: number, updateMovieDto: UpdateMovieDto) {
-    return this.prisma.$transaction(async (prisma) => {
-      const movie = await prisma.movie.findUnique({
-        where: { id },
-        include: {
-          detail: true,
-          genres: true,
-        }
-      });
+    const session = await this.movieModel.startSession();
+    session.startTransaction();
+
+    try {
+
+      const movie = await this.movieModel.findById(id)
+        .populate('detail genres')
+        .exec();
 
       if (!movie) {
         throw new NotFoundException('존재하지 않는 ID의 영화입니다!');
@@ -433,56 +494,120 @@ export class MovieService {
 
       const { detail, directorId, genreIds, ...movieRest } = updateMovieDto;
 
-      let movieUpdateParams: Prisma.MovieUpdateInput = {
+      let movieUpdateParams: {
+        title?: string;
+        movieFileName?: string;
+        director?: Types.ObjectId;
+        genres?: Types.ObjectId[];
+      } = {
         ...movieRest,
       };
 
-
       if (directorId) {
-        const director = await prisma.director.findUnique({
-          where: { id: directorId },
-        })
+        const director = await this.directorModel.findById(directorId).exec();
 
         if (!director) {
           throw new NotFoundException('존재하지 않는 ID의 감독입니다!');
         }
 
-        movieUpdateParams.director = { connect: { id: directorId } }
+        movieUpdateParams.director = director._id as Types.ObjectId;
       }
 
       if (genreIds) {
-        const genres = await prisma.genre.findMany({
-          where: { id: { in: genreIds } }
-        });
+        const genres = await this.genreModel.find({
+          _id: { $in: genreIds }
+        }).exec();
 
         if (genres.length !== genreIds.length) {
           throw new NotFoundException(`존재하지 않는 장르가 있습니다! 존재하는 ids -> ${genres.map(genre => genre.id).join(',')}`);
         }
 
-        movieUpdateParams.genres = { set: genres.map((genre) => ({ id: genre.id })) };
+        movieUpdateParams.genres = genres.map((genre) => genre._id) as Types.ObjectId[];
       }
-
-      await prisma.movie.update({
-        where: { id },
-        data: movieUpdateParams,
-      })
 
       if (detail) {
-        await prisma.movieDetail.update({
-          where: { id: movie.detail.id },
-          data: { detail }
-        })
+        await this.movieDetailModel.findByIdAndUpdate(movie.detail._id, {
+          detail,
+        }).exec();
       }
 
-      return prisma.movie.findUnique({
-        where: { id },
-        include: {
-          detail: true,
-          director: true,
-          genres: true,
-        }
-      })
-    })
+      await this.movieModel.findByIdAndUpdate(id, movieUpdateParams);
+
+      await session.commitTransaction();
+
+      return this.movieModel.findById(id)
+        .populate('detail director genres').exec();
+    } catch (e) {
+      await session.abortTransaction();
+    } finally {
+      session.endSession();
+    }
+
+    // return this.prisma.$transaction(async (prisma) => {
+    //   const movie = await prisma.movie.findUnique({
+    //     where: { id },
+    //     include: {
+    //       detail: true,
+    //       genres: true,
+    //     }
+    //   });
+
+    //   if (!movie) {
+    //     throw new NotFoundException('존재하지 않는 ID의 영화입니다!');
+    //   }
+
+    //   const { detail, directorId, genreIds, ...movieRest } = updateMovieDto;
+
+    //   let movieUpdateParams: Prisma.MovieUpdateInput = {
+    //     ...movieRest,
+    //   };
+
+
+    //   if (directorId) {
+    //     const director = await prisma.director.findUnique({
+    //       where: { id: directorId },
+    //     })
+
+    //     if (!director) {
+    //       throw new NotFoundException('존재하지 않는 ID의 감독입니다!');
+    //     }
+
+    //     movieUpdateParams.director = { connect: { id: directorId } }
+    //   }
+
+    //   if (genreIds) {
+    //     const genres = await prisma.genre.findMany({
+    //       where: { id: { in: genreIds } }
+    //     });
+
+    //     if (genres.length !== genreIds.length) {
+    //       throw new NotFoundException(`존재하지 않는 장르가 있습니다! 존재하는 ids -> ${genres.map(genre => genre.id).join(',')}`);
+    //     }
+
+    //     movieUpdateParams.genres = { set: genres.map((genre) => ({ id: genre.id })) };
+    //   }
+
+    //   await prisma.movie.update({
+    //     where: { id },
+    //     data: movieUpdateParams,
+    //   })
+
+    //   if (detail) {
+    //     await prisma.movieDetail.update({
+    //       where: { id: movie.detail.id },
+    //       data: { detail }
+    //     })
+    //   }
+
+    //   return prisma.movie.findUnique({
+    //     where: { id },
+    //     include: {
+    //       detail: true,
+    //       director: true,
+    //       genres: true,
+    //     }
+    //   })
+    // })
   }
 
   // async update(id: number, updateMovieDto: UpdateMovieDto) {
