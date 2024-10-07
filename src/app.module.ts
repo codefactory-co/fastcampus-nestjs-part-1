@@ -32,6 +32,7 @@ import { Chat } from './chat/entity/chat.entity';
 import { ChatRoom } from './chat/entity/chat-room.entity';
 import { ChatModule } from './chat/chat.module';
 import { WorkerModule } from './worker/worker.module';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { WorkerModule } from './worker/worker.module';
         BUCKET_NAME: Joi.string().required(),
       }),
     }),
+    MongooseModule.forRoot('mongodb+srv://test:test@nestjsmongo.xicpm.mongodb.net/?retryWrites=true&w=majority&appName=NestJSMongo'),
     TypeOrmModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
         url: configService.get<string>(envVariableKeys.dbUrl),
@@ -124,10 +126,10 @@ import { WorkerModule } from './worker/worker.module';
     AuthModule,
     UserModule,
     ChatModule,
-    ConditionalModule.registerWhen(
-      WorkerModule,
-      (env: NodeJS.ProcessEnv) => env['TYPE'] === 'worker',
-    ),
+    // ConditionalModule.registerWhen(
+    //   WorkerModule,
+    //   (env: NodeJS.ProcessEnv) => env['TYPE'] === 'worker',
+    // ),
   ],
   providers: [
     {

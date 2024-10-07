@@ -36,20 +36,20 @@ import { PrismaService } from "./prisma.service";
         TypeOrmModule.forFeature([
             Movie,
         ]),
-        BullModule.forRoot({
-            connection: {
-                host: 'redis-14693.c340.ap-northeast-2-1.ec2.redns.redis-cloud.com',
-                port: 14693,
-                username: 'default',
-                password: 'ubZ1DR3UoLj8v7bjidGEOOzX10I8sxUw',
-            }
-        }),
-        BullModule.registerQueue({
-            name: 'thumbnail-generation',
-        }),
+        // BullModule.forRoot({
+        //     connection: {
+        //         host: 'redis-14693.c340.ap-northeast-2-1.ec2.redns.redis-cloud.com',
+        //         port: 14693,
+        //         username: 'default',
+        //         password: 'ubZ1DR3UoLj8v7bjidGEOOzX10I8sxUw',
+        //     }
+        // }),
+        // BullModule.registerQueue({
+        //     name: 'thumbnail-generation',
+        // }),
     ],
     controllers: [CommonController],
-    providers: [CommonService, TasksService, DefaultLogger, PrismaService],
+    providers: [CommonService, DefaultLogger, PrismaService],
     exports: [CommonService, PrismaService],
 })
 export class CommonModule { }

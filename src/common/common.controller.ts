@@ -11,8 +11,8 @@ import { InjectQueue } from '@nestjs/bull';
 export class CommonController {
     constructor(
         private readonly commonService: CommonService,
-        @InjectQueue('thumbnail-generation')
-        private readonly thumbnailQueue: Queue,
+        // @InjectQueue('thumbnail-generation')
+        // private readonly thumbnailQueue: Queue,
     ) {
 
     }
@@ -36,17 +36,17 @@ export class CommonController {
     async createVideo(
         @UploadedFile() movie: Express.Multer.File,
     ) {
-        await this.thumbnailQueue.add('thumbnail', {
-            videoId: movie.filename,
-            videoPath: movie.path,
-        }, {
-            priority: 1,
-            delay: 100,
-            attempts: 3,
-            lifo: true,
-            removeOnComplete: true,
-            removeOnFail: true,
-        });
+        // await this.thumbnailQueue.add('thumbnail', {
+        //     videoId: movie.filename,
+        //     videoPath: movie.path,
+        // }, {
+        //     priority: 1,
+        //     delay: 100,
+        //     attempts: 3,
+        //     lifo: true,
+        //     removeOnComplete: true,
+        //     removeOnFail: true,
+        // });
 
         return {
             fileName: movie.filename,

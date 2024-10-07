@@ -16,7 +16,7 @@ export class ChatRoom extends BaseTable {
     users: User[];
 
     @OneToMany(
-        ()=> Chat,
+        () => Chat,
         (chat) => chat.chatRoom,
     )
     chats: Chat[];
