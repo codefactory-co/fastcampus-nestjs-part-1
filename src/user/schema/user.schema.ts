@@ -1,5 +1,5 @@
 import { Role } from "@prisma/client";
-import { Types } from "mongoose";
+import { Types, Document } from "mongoose";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { timestamp } from "rxjs";
 import { Movie } from "src/movie/schema/movie.schema";
