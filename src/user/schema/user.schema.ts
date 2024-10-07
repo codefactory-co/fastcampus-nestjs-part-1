@@ -2,6 +2,10 @@ import { Role } from "@prisma/client";
 import { Types } from "mongoose";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { timestamp } from "rxjs";
+import { Movie } from "src/movie/schema/movie.schema";
+import { MovieUserLike } from "src/movie/schema/movie-user-like.schema";
+import { Chat } from "src/chat/schema/chat.schema";
+import { ChatRoom } from "src/chat/schema/chat-room.schema";
 
 // export const userSchema = new Schema({
 //     id: Number,
