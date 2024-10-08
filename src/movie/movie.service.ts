@@ -176,8 +176,8 @@ export class MovieService {
       // const movieIds = data.map(movie => movie.id);
 
       const likedMovies = movieIds.length < 1 ? [] : await this.movieUserLikeModel.find({
-        movie: { $in: movieIds },
-        user: userId,
+        movie: { $in: movieIds.map((id) => new Types.ObjectId(id.toString())) },
+        user: new Types.ObjectId(userId.toString()),
       })
         .populate('movie')
         .exec();
@@ -495,7 +495,7 @@ export class MovieService {
     //       .addAndRemove(newGenres.map(genre => genre.id), movie.genres.map(genre => genre.id));
   }
 
-  async update(id: number, updateMovieDto: UpdateMovieDto) {
+  async update(id: string, updateMovieDto: UpdateMovieDto) {
     const session = await this.movieModel.startSession();
     session.startTransaction();
 
@@ -553,7 +553,11 @@ export class MovieService {
       await session.commitTransaction();
 
       return this.movieModel.findById(id)
-        .populate('detail director genres').exec();
+        .populate('detail director')
+        .populate({
+          path: 'genres',
+          model: 'Genre',
+        }).exec();
     } catch (e) {
       await session.abortTransaction();
     } finally {
@@ -755,7 +759,7 @@ export class MovieService {
     //   .execute();
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     const movie = await this.movieModel.findById(id).populate('detail').exec();
     // const movie = await this.prisma.movie.findUnique({
     //   where: {
@@ -804,7 +808,7 @@ export class MovieService {
     //   .getOne();
   }
 
-  async toggleMovieLike(movieId: number, userId: number, isLike: boolean) {
+  async toggleMovieLike(movieId: string, userId: string, isLike: boolean) {
     const movie = await this.movieModel.findById(movieId).exec();
     // const movie = await this.prisma.movie.findUnique({
     //   where: {
@@ -839,8 +843,8 @@ export class MovieService {
     }
 
     const likeRecord = await this.movieUserLikeModel.findOne({
-      movie: movieId,
-      user: userId,
+      movie: new Types.ObjectId(movieId),
+      user: new Types.ObjectId(userId),
     })
     // const likeRecord = await this.prisma.movieUserLike.findUnique({
     //   where: {
@@ -884,8 +888,8 @@ export class MovieService {
       }
     } else {
       await this.movieUserLikeModel.create({
-        movie: movieId,
-        user: userId,
+        movie: new Types.ObjectId(movieId),
+        user: new Types.ObjectId(userId),
         isLike,
       })
       // await this.prisma.movieUserLike.create({
@@ -903,8 +907,8 @@ export class MovieService {
     }
 
     const result = await this.movieUserLikeModel.findOne({
-      movie: movieId,
-      user: userId,
+      movie: new Types.ObjectId(movieId),
+      user: new Types.ObjectId(userId),
     });
     // const result = await this.prisma.movieUserLike.findUnique({
     //   where: {

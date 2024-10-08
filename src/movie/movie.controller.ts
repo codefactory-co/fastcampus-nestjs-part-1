@@ -98,11 +98,11 @@ export class MovieController {
   @Patch(':id')
   @RBAC(Role.admin)
   patchMovie(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() body: UpdateMovieDto,
   ) {
     return this.movieService.update(
-      +id,
+      id,
       body,
     );
   }
@@ -110,10 +110,10 @@ export class MovieController {
   @Delete(':id')
   @RBAC(Role.admin)
   deleteMovie(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
   ) {
     return this.movieService.remove(
-      +id,
+      id,
     );
   }
 
@@ -143,16 +143,16 @@ export class MovieController {
    */
   @Post(':id/like')
   createMovieLike(
-    @Param('id', ParseIntPipe) movieId: number,
-    @UserId() userId: number,
+    @Param('id') movieId: string,
+    @UserId() userId: string,
   ) {
     return this.movieService.toggleMovieLike(movieId, userId, true);
   }
 
   @Post(':id/dislike')
   createMovieDislike(
-    @Param('id', ParseIntPipe) movieId: number,
-    @UserId() userId: number,
+    @Param('id') movieId: string,
+    @UserId() userId: string,
   ) {
     return this.movieService.toggleMovieLike(movieId, userId, false);
   }
