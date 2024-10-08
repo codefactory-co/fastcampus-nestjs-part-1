@@ -9,6 +9,9 @@ import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 import { UserService } from 'src/user/user.service';
 import { PrismaClient, Role } from '@prisma/client';
 import { PrismaService } from 'src/common/prisma.service';
+import { Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
+import { User } from 'src/user/schema/user.schema';
 
 @Injectable()
 export class AuthService {
@@ -20,10 +23,12 @@ export class AuthService {
         private readonly jwtService: JwtService,
         @Inject(CACHE_MANAGER)
         private readonly cacheManager: Cache,
-        private readonly prisma: PrismaService,
+        // private readonly prisma: PrismaService,
+        @InjectModel(User.name)
+        private readonly userModel: Model<User>
     ) { }
 
-    async tokenBlock(token: string){
+    async tokenBlock(token: string) {
         const payload = this.jwtService.decode(token);
 
         const expiryDate = +new Date(payload['exp'] * 1000);
@@ -119,16 +124,22 @@ export class AuthService {
     }
 
     async authenticate(email: string, password: string) {
-        const user = await this.prisma.user.findUnique({
-            where: {
-                email,
-            },
-            select:{
-                id: true,
-                password: true,
-                role: true,
-            }
-        })
+
+        const user = await this.userModel.findOne({
+            email,
+        }, {
+            password: 1,
+        });
+        // const user = await this.prisma.user.findUnique({
+        //     where: {
+        //         email,
+        //     },
+        //     select: {
+        //         id: true,
+        //         password: true,
+        //         role: true,
+        //     }
+        // })
         // const user = await this.userRepository.findOne({
         //     where: {
         //         email,
@@ -148,12 +159,12 @@ export class AuthService {
         return user;
     }
 
-    async issueToken(user: { id: number, role: Role }, isRefreshToken: boolean) {
+    async issueToken(user: { _id: any, role: Role }, isRefreshToken: boolean) {
         const refreshTokenSecret = this.configService.get<string>(envVariableKeys.refreshTokenSecret);
         const accessTokenSecret = this.configService.get<string>(envVariableKeys.accessTokenSecret);
 
         return this.jwtService.signAsync({
-            sub: user.id,
+            sub: user._id,
             role: user.role,
             type: isRefreshToken ? 'refresh' : 'access',
         }, {
