@@ -20,24 +20,23 @@ export class CreateMovieDto {
     detail: string;
 
     @IsNotEmpty()
-    @IsNumber()
+    @IsString()
     @ApiProperty({
         description: '감독 객체 ID',
         example: 1,
     })
-    directorId: number;
+    directorId: string;
 
-    @IsArray()
     @ArrayNotEmpty()
-    @IsNumber({}, {
+    @IsString({
         each: true,
     })
-    @Type(() => Number)
+    @Type(() => String)
     @ApiProperty({
         description: '장르 IDs',
         example: [1,2,3],
     })
-    genreIds: number[];
+    genreIds: string[];
 
     @IsString()
     @ApiProperty({

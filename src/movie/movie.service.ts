@@ -348,9 +348,18 @@ export class MovieService {
 
       await session.commitTransaction();
 
-      return this.movieModel.findById(movie[0]._id).populate('detail director genre').exec();
+      return this.movieModel.findById(movie[0]._id)
+        .populate('detail')
+        .populate('director')
+        .populate({
+          path: 'genres',
+          model: 'Genre'
+        })
+        .exec();
     } catch (e) {
       await session.abortTransaction();
+      console.log(e);
+      throw new InternalServerErrorException('트랜잭션 실패');
     } finally {
       session.endSession();
     }

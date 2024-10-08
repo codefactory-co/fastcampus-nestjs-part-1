@@ -23,7 +23,7 @@ import { Role } from '@prisma/client';
 @Controller('movie')
 @ApiBearerAuth()
 @ApiTags('movie')
-@UseInterceptors(ClassSerializerInterceptor)
+// @UseInterceptors(ClassSerializerInterceptor)
 export class MovieController {
   constructor(private readonly movieService: MovieService) { }
 
