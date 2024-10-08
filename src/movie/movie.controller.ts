@@ -65,7 +65,7 @@ export class MovieController {
   @Get(':id')
   @Public()
   getMovie(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Req() request: any,
   ) {
     const session = request.session;
@@ -77,8 +77,6 @@ export class MovieController {
       [id]: movieCount[id] ? movieCount[id] + 1 : 1,
     }
 
-    console.log(session);
-    
     return this.movieService.findOne(id);
   }
 

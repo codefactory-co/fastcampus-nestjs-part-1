@@ -65,6 +65,10 @@ export class MovieService {
     }
 
     const data = await this.movieModel.find()
+      .populate({
+        path: 'genres',
+        model: 'Genre'
+      })
       .sort({ createdAt: -1 })
       .limit(10)
       .exec();
@@ -108,7 +112,11 @@ export class MovieService {
 
     const orderBy = order.reduce((acc, field) => {
       const [column, direction] = field.split('_');
-      acc[column] = direction.toLocaleLowerCase();
+      if (column === 'id') {
+        acc['_id'] = direction.toLowerCase();
+      } else {
+        acc[column] = direction.toLowerCase();
+      }
       return acc;
     }, {})
 
@@ -142,7 +150,7 @@ export class MovieService {
       .limit(take + 1);
 
     if (cursor) {
-      query.skip(1).gt('_id', new Types.ObjectId(cursor));
+      query.lt('_id', new Types.ObjectId(cursor));
     }
 
     const movies = await query.populate('genres director').exec();
@@ -196,7 +204,7 @@ export class MovieService {
 
       return {
         data: movies.map((movie) => ({
-          ...movie,
+          ...movie.toObject(),
           likeStatus: movie._id.toString() in likedMovieMap ? likedMovieMap[movie._id.toString()] : null,
         })) as (Document<unknown, {}, Movie> & Movie & Required<{
           _id: unknown;
@@ -233,7 +241,7 @@ export class MovieService {
     //   .getOne();
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const movie = await this.movieModel.findById(id);
     // const movie = await this.prisma.movie.findUnique({
     //   where: {
