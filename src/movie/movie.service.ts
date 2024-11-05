@@ -21,6 +21,12 @@ import { Genre } from 'src/genre/schema/genre.schema';
 import { User } from 'src/user/schema/user.schema';
 import { MovieUserLike } from './schema/movie-user-like.schema';
 
+type TFunction = (x: number, y: number) => number;
+
+const fun4: TFunction = function(x) {
+    return x;
+}
+
 @Injectable()
 export class MovieService {
 
